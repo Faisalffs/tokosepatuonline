@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard Admin - SepatuKita</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <style>
+    /* Reset & Base */
+    * { box-sizing: border-box; font-family: system-ui, sans-serif; }
+    
+    body { 
+      background-color: #000000; /* Latar Belakang Hitam Pekat */
+      color: #e2e8f0; /* Teks Putih Abu-abu */
+      margin: 0;
+      padding: 20px;
+    }
+
+    /* Container Utama */
+    .admin-container { 
+      max-width: 1000px; 
+      margin: 20px auto; 
+      padding: 25px; 
+      background: #0f0f0f; /* Hitam sedikit terang */
+      border: 1px solid #333;
+      border-radius: 12px; 
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.05); /* Glow tipis */
+    }
+
+    /* Header */
+    .header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-bottom: 30px; 
+      border-bottom: 1px solid #333; 
+      padding-bottom: 20px; 
+    }
+    
+    h2 { margin: 0; color: #fbbf24; /* Warna Emas */ }
+
+    .btn-back { 
+      text-decoration: none; 
+      color: #94a3b8; 
+      font-size: 0.9rem;
+      transition: 0.3s;
+    }
+    .btn-back:hover { color: #fff; }
+
+    .btn-logout { 
+      background: #dc2626; 
+      color: white; 
+      padding: 10px 20px; 
+      border-radius: 6px; 
+      border: none; 
+      cursor: pointer; 
+      font-weight: bold;
+    }
+    .btn-logout:hover { background: #ef4444; }
+
+    /* Form Input Box */
+    .form-box { 
+      background: #1a1a1a; /* Abu Gelap */
+      padding: 25px; 
+      border-radius: 10px; 
+      margin-bottom: 30px; 
+      border: 1px solid #333; 
+    }
+
+    h3 { margin-top: 0; color: #fff; border-left: 4px solid #fbbf24; padding-left: 10px; }
+
+    .input-group { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 15px; 
+      margin-bottom: 20px; 
+    }
+
+    /* Styling Input Agar Gelap */
+    input { 
+      padding: 12px; 
+      background: #262626; 
+      border: 1px solid #404040; 
+      border-radius: 6px; 
+      color: #fff; 
+      font-size: 1rem;
+      outline: none;
+    }
+    input:focus { border-color: #fbbf24; }
+    input::placeholder { color: #737373; }
+
+    /* Tombol Save & Cancel */
+    #btn-save {
+      width: 100%;
+      padding: 12px;
+      background: #fbbf24; /* Emas */
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: 0.3s;
+    }
+    #btn-save:hover { background: #f59e0b; }
+
+    #btn-cancel {
+      width: 100px;
+      padding: 12px;
+      background: #404040;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    #btn-cancel:hover { background: #525252; }
+
+    /* Tabel Data */
+    .admin-table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      margin-top: 10px;
+    }
+
+    th, td { 
+      padding: 15px; 
+      border-bottom: 1px solid #333; 
+      text-align: left; 
+    }
+
+    th { 
+      background: #1a1a1a; 
+      color: #94a3b8; 
+      text-transform: uppercase; 
+      font-size: 0.85rem; 
+      letter-spacing: 1px;
+    }
+
+    tr:hover { background: #111; }
+
+    /* Tombol Aksi Kecil */
+    .btn-action {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      color: white;
+      font-size: 0.85rem;
+      margin-right: 5px;
+    }
+    .edit { background: #f59e0b; color: black; font-weight: bold; }
+    .hapus { background: #ef4444; }
+
+    /* Responsif untuk HP */
+    @media (max-width: 600px) {
+      .input-group { grid-template-columns: 1fr; }
+      .admin-container { padding: 15px; margin: 10px; }
+    }
+    /* Paksa input file agar bisa diklik */
+input[type="file"] {
+  position: relative;
+  z-index: 10;
+  cursor: pointer;
+}
+  </style>
+</head>
+<body>
+
+  <div class="admin-container">
+    <div class="header">
+      <div>
+        <h2>👑 Admin Panel</h2>
+        <a href="index.html" class="btn-back">← Kembali ke Toko User</a>
+      </div>
+      <button id="logout-btn" class="btn-logout">Logout</button>
+    </div>
+
+   <div class="form-box">
+      <h3>Kelola Produk</h3>
+      
+      <div class="input-group">
+        <input type="text" id="p-name" placeholder="Nama Produk">
+        <input type="number" id="p-price" placeholder="Harga (Rp)">
+        
+        <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 10px;">
+          
+          <select id="p-type" style="padding: 12px; background: #262626; color: white; border: 1px solid #404040; border-radius: 6px; cursor: pointer;">
+            <option value="emoji">Pakai Emoji</option>
+            <option value="image">Upload Foto (Dari HP/Laptop)</option>
+          </select>
+          
+          <input type="text" id="p-emoji" placeholder="Masukkan Emoji (Cth: 👟)">
+          
+          <input type="file" id="p-file" accept="image/*" style="display: none; padding: 10px; background: #333; color: white; border: 1px solid #555; border-radius: 6px;">
+          
+          <span id="file-info" style="display:none; color: #fbbf24; font-size: 0.8rem; margin-top: -5px;">
+            Maksimal 900KB
+          </span>
+
+        </div>
+
+        <input type="text" id="p-desc" placeholder="Deskripsi Singkat" style="grid-column: span 2;">
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button id="btn-save">+ Simpan Produk</button>
+        <button id="btn-cancel" style="display: none;">Batal</button>
+      </div>
+    </div>
+
+    <h3>Daftar Produk Aktif</h3>
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Emoji</th>
+          <th>Nama</th>
+          <th>Harga</th>
+          <th>Deskripsi</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+        <tr><td colspan="5" style="text-align:center; color:#555;">Memuat data...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div id="logout-confirm-modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; display: none; justify-content: center; align-items: center;">
+  <div style="background: #1a1a1a; padding: 30px; border-radius: 12px; text-align: center; border: 1px solid #333; max-width: 300px;">
+    <h3 style="color: white; margin-top: 0;">Konfirmasi Logout</h3>
+    <p style="color: #ccc;">Yakin ingin keluar dari panel admin?</p>
+    
+    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+      <button id="btn-logout-no" style="padding: 10px 20px; background: #333; color: white; border: none; border-radius: 6px; cursor: pointer;">Batal</button>
+      <button id="btn-logout-yes" style="padding: 10px 20px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Ya, Keluar</button>
+    </div>
+  </div>
+</div>
+
+  <script type="module" src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>SepatuKita - Toko Online</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="navbar">
+    <div class="logo">SepatuKita</div>
+    <nav>
+      <a href="#" class="nav-link" data-target="home-section">Beranda</a>
+      <a href="#" class="nav-link" data-target="produk-section">Katalog</a>
+      
+      <span class="cart" id="cart-btn">Keranjang (<span id="cart-count">0</span>)</span>
+      
+      <span class="cart" id="user-info" style="display:none; color:#fbbf24;">User</span>
+      <span class="cart" id="login-btn-nav">Login</span>
+      <span class="cart" id="logout-btn" style="display:none">Logout</span>
+    </nav>
+  </header>
+
+  <main>
+    <section id="home-section">
+      <section class="hero">
+        <div class="hero-text">
+          <h1>Sepatu Keren, Langkah Pasti</h1>
+          <p>Kualitas terbaik untuk gaya harianmu.</p>
+          <a href="#" class="nav-link btn" data-target="produk-section" 
+             style="display:inline-block; margin-top:15px; background:#fbbf24; color:black; padding:10px 20px; border-radius:30px; text-decoration:none; font-weight:bold;">
+             Belanja Sekarang
+          </a>
+        </div>
+      </section>
+
+      <section class="produk-section">
+        <h2>🔥 Terbaru</h2>
+        <div class="produk-grid" id="home-products">
+          <p>Memuat...</p>
+        </div>
+      </section>
+    </section>
+
+    <section id="produk-section" style="display: none;">
+      <section class="produk-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="margin:0; border-bottom:3px solid #fbbf24;">👟 Katalog Lengkap</h2>
+          <select id="sort-select" style="padding:8px; border-radius:6px;">
+            <option value="newest">Paling Baru</option>
+            <option value="cheap">Termurah</option>
+            <option value="expensive">Termahal</option>
+            <option value="name">Nama A-Z</option>
+          </select>
+        </div>
+        <div class="produk-grid" id="all-products"></div>
+      </section>
+    </section>
+  </main>
+
+  <footer><p>&copy; 2025 SepatuKita.</p></footer>
+
+  <div class="cart-sidebar" id="cart-sidebar">
+    <div class="cart-header">
+      <h2>Keranjang</h2>
+      <span class="cart-close" id="cart-close">&times;</span>
+    </div>
+    <div class="cart-content">
+      <ul id="cart-items"></ul>
+    </div>
+    <div class="cart-footer">
+      <p style="text-align:right; color:white; margin-bottom:10px; font-weight:bold;">
+        Total: Rp <span id="cart-total">0</span>
+      </p>
+      <button id="checkout-btn">Checkout WhatsApp</button>
+    </div>
+  </div>
+
+  <div class="login-wrapper" id="login-wrapper" style="display:none;">
+    <div class="login-container">
+      <span class="login-close" id="login-close">&times;</span>
+      
+      <div id="login-tab">
+        <h2>Login</h2>
+        <input type="text" id="login-username" placeholder="Username">
+        <input type="password" id="login-password" placeholder="Password">
+        <button id="btn-login">Masuk</button>
+        <p class="login-info">Belum ada akun? <a href="#" id="go-register">Daftar</a></p>
+      </div>
+
+      <div id="register-tab" style="display:none;">
+        <h2>Daftar</h2>
+        <input type="text" id="reg-username" placeholder="Username">
+        <input type="email" id="reg-email" placeholder="Email">
+        <input type="password" id="reg-password" placeholder="Password">
+        <button id="btn-daftar">Daftar</button>
+        <p class="login-info">Sudah punya akun? <a href="#" id="go-login">Login</a></p>
+      </div>
+    </div>
+  </div>
+
+  <div id="custom-alert" class="modal-overlay" style="display: none;">
+    <div class="modal-box">
+      <div style="font-size:3rem;">✨</div>
+      <h3 id="alert-msg" style="margin:10px 0;">Pesan</h3>
+      <button id="btn-close-alert">OK</button>
+    </div>
+  </div>
+
+  <div id="logout-confirm-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-box">
+      <div style="font-size:3rem;">🚪</div>
+      <h3>Logout?</h3>
+      <p>Yakin mau keluar akun?</p>
+      <div style="display:flex; gap:10px; margin-top:15px;">
+        <button id="btn-logout-no" style="background:#ddd; color:#333;">Batal</button>
+        <button id="btn-logout-yes" style="background:#ef4444; color:white;">Ya</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="script.js"></script>
+</body>
+</html>
