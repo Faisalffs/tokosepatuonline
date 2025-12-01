@@ -396,11 +396,19 @@ document.getElementById("checkout-btn")?.addEventListener("click", async () => {
     }
 
     // 3. Kirim WA
+   // ... kode sebelumnya (di dalam event listener checkout-btn) ...
+
+    // 3. Kirim WA
     const text = cart.map(i => `${i.name}`).join(", ");
-    window.open(`https://wa.me/6281234567890?text=Halo Admin, Saya mau order: ${text} | Total: Rp ${total.toLocaleString()}`, "_blank");
+    
+    // PERUBAHAN: Nomor diganti menjadi 6289601572430
+    window.open(`https://wa.me/6289601572430?text=Halo Admin, Saya mau order: ${text} | Total: Rp ${total.toLocaleString()}`, "_blank");
     
     // 4. Reset
     cart.length = 0; 
+    renderCart(); 
+    
+    // ... kode selanjutnya ...
     renderCart(); 
     document.body.classList.remove("cart-open");
     loadProducts(); // Reload produk biar stok di tampilan update
