@@ -4,7 +4,7 @@ import {
   getFirestore, doc, getDoc, collection, addDoc, getDocs, deleteDoc, updateDoc 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// === CONFIG (HARUS SAMA DENGAN SCRIPT.JS) ===
+// === CONFIG ===
 const firebaseConfig = {
   apiKey: "AIzaSyB8Kufn-wpQPMRnMv4EJk9VJ2MCa_FEwIE",
   authDomain: "toko-sepatu-online.firebaseapp.com",
@@ -24,6 +24,7 @@ const db = getFirestore(app);
 const tableBody = document.getElementById("table-body");
 const inpName = document.getElementById("p-name");
 const inpPrice = document.getElementById("p-price");
+const inpStock = document.getElementById("p-stock"); // INPUT STOK
 const inpDesc = document.getElementById("p-desc");
 
 // Element Gambar
@@ -61,7 +62,7 @@ if (selectType) {
       inpEmoji.style.display = "none";
       inpFile.style.display = "block";
       fileInfo.style.display = "block";
-      fileInfo.textContent = isEditing ? "Biarkan kosong jika tidak ganti foto" : "Wajib pilih foto (Max 900KB)";
+      fileInfo.textContent = isEditing ? "Biarkan kosong jika tidak ganti foto" : "Wajib pilih foto (Max 500KB)";
     }
   });
 }
@@ -85,7 +86,7 @@ onAuthStateChanged(auth, async (user) => {
 
 // === 2. CRUD PRODUK ===
 async function loadProducts() {
-  tableBody.innerHTML = "<tr><td colspan='5' style='text-align:center; color:white;'>Loading data...</td></tr>";
+  tableBody.innerHTML = "<tr><td colspan='6' style='text-align:center; color:white;'>Loading data...</td></tr>";
   try {
     const snap = await getDocs(collection(db, "products"));
     productsData = [];
@@ -109,8 +110,8 @@ function renderTable() {
     row.innerHTML = `
       <td>${visual}</td>
       <td><strong>${p.name}</strong></td>
-      <td>Rp ${p.price.toLocaleString()}</td>
-      <td style="color:#aaa">${p.desc}</td>
+      <td>Rp ${p.price.toLocaleString('id-ID')}</td>
+      <td>${p.stock || 0} Pcs</td> <td style="color:#aaa">${p.desc}</td>
       <td>
         <button onclick="window.startEdit('${p.id}')" class="btn-action edit">Edit</button>
         <button onclick="window.hapus('${p.id}')" class="btn-action hapus">Hapus</button>
@@ -124,10 +125,11 @@ function renderTable() {
 btnSave.addEventListener("click", async () => {
   const name = inpName.value;
   const price = parseInt(inpPrice.value);
+  const stock = parseInt(inpStock.value); // AMBIL STOK
   const desc = inpDesc.value;
   const type = selectType.value; 
   
-  if(!name || !price || !desc) return alert("Isi semua data!");
+  if(!name || !price || isNaN(stock) || !desc) return alert("Isi semua data termasuk stok!");
 
   btnSave.disabled = true;
   btnSave.textContent = "Menyimpan...";
@@ -142,7 +144,8 @@ btnSave.addEventListener("click", async () => {
       // HANDLE FILE UPLOAD (BASE64)
       const file = inpFile.files[0];
       if (file) {
-        if (file.size > 900 * 1024) throw new Error("File terlalu besar! Max 900KB");
+        // FIX: BATAS SIZE TURUN JADI 500KB AGAR FIREBASE TIDAK ERROR
+        if (file.size > 500 * 1024) throw new Error("File terlalu besar! Max 500KB");
         finalImageValue = await convertToBase64(file);
       } else {
         // Jika edit dan tidak ganti foto
@@ -152,7 +155,7 @@ btnSave.addEventListener("click", async () => {
     }
 
     const payload = { 
-      name, price, desc, 
+      name, price, stock, desc, // SIMPAN STOK KE DATABASE
       imageType: type, 
       imageValue: finalImageValue,
       emoji: type === 'emoji' ? finalImageValue : "" 
@@ -188,7 +191,10 @@ window.startEdit = (id) => {
   const p = productsData.find(x => x.id === id);
   if (!p) return;
   
-  inpName.value = p.name; inpPrice.value = p.price; inpDesc.value = p.desc;
+  inpName.value = p.name; 
+  inpPrice.value = p.price; 
+  inpStock.value = p.stock || 0; // ISI FORM DENGAN STOK LAMA
+  inpDesc.value = p.desc;
 
   if (p.imageType === 'image' || p.imageType === 'url') {
     selectType.value = 'image';
@@ -210,7 +216,10 @@ window.startEdit = (id) => {
 
 function resetForm() {
   isEditing = false; editId = null; currentImageUrl = "";
-  inpName.value = ""; inpPrice.value = ""; inpDesc.value = "";
+  inpName.value = ""; 
+  inpPrice.value = ""; 
+  inpStock.value = ""; // RESET STOK
+  inpDesc.value = "";
   inpEmoji.value = ""; inpFile.value = "";
   selectType.value = "emoji";
   inpEmoji.style.display = "block"; inpFile.style.display = "none";
