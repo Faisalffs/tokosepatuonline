@@ -1,4 +1,6 @@
-// ============ 1. IMPORT FIREBASE ============
+// =========================================
+// 1. IMPORT FIREBASE LENGKAP
+// =========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { 
   getAuth, 
@@ -15,11 +17,15 @@ import {
   collection, 
   addDoc,     
   getDocs,
-  updateDoc, // Tambahan untuk update stok
-  increment  // Tambahan untuk mengurangi stok
+  updateDoc, 
+  increment,
+  query,
+  where
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// ============ 2. CONFIG (PASTIKAN API KEY BENAR) ============
+// =========================================
+// 2. KONFIGURASI FIREBASE
+// =========================================
 const firebaseConfig = {
   apiKey: "AIzaSyB8Kufn-wpQPMRnMv4EJk9VJ2MCa_FEwIE",
   authDomain: "toko-sepatu-online.firebaseapp.com",
@@ -35,28 +41,20 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ============ 3. DOM ELEMENTS ============
-// Auth & Nav
-const loginWrapper = document.getElementById("login-wrapper");
-const loginBtnNav = document.getElementById("login-btn-nav");
-const logoutBtn = document.getElementById("logout-btn");
-const userInfo = document.getElementById("user-info");
-const sortSelect = document.getElementById("sort-select");
+// =========================================
+// 3. VARIABEL GLOBAL & HELPER
+// =========================================
+let allProductsData = []; 
+const cart = []; 
 
-// Inputs Auth
-const regUsername = document.getElementById("reg-username");
-const regEmail = document.getElementById("reg-email");
-const regPass = document.getElementById("reg-password");
-const loginUsername = document.getElementById("login-username");
-const loginPass = document.getElementById("login-password");
-
-// Custom Alert
-const customAlert = document.getElementById("custom-alert");
-const alertMsg = document.getElementById("alert-msg"); // Perbaikan ID (sebelumnya alert-message)
-const btnCloseAlert = document.getElementById("btn-close-alert");
+// Fungsi Ambil Elemen (Biar aman kalau elemen tidak ada)
+const getEl = (id) => document.getElementById(id);
 
 // Fungsi Alert Custom
 function showAlert(message) {
+  const customAlert = getEl("custom-alert");
+  const alertMsg = getEl("alert-msg");
+  
   if (customAlert && alertMsg) {
     alertMsg.textContent = message;
     customAlert.style.display = "flex";
@@ -64,134 +62,321 @@ function showAlert(message) {
     alert(message);
   }
 }
-if (btnCloseAlert) btnCloseAlert.addEventListener("click", () => customAlert.style.display = "none");
 
+// Fungsi Convert File ke Base64 (Untuk Bukti Transfer)
+const convertToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (error) => reject(error);
+  });
+};
 
-// ============ 4. AUTH & REDIRECT ADMIN ============
+// =========================================
+// 4. CEK STATUS LOGIN (AUTH STATE)
+// =========================================
 onAuthStateChanged(auth, async (user) => {
+  const loginWrapper = getEl("login-wrapper");
+  const loginBtnNav = getEl("login-btn-nav");
+  const logoutBtn = getEl("logout-btn");
+  const userInfo = getEl("user-info");
+  const adminLinkNav = getEl("admin-link-nav");
+  const btnMyOrders = getEl("btn-my-orders");
+
   if (user) {
-    // User Login
+    // --- JIKA USER LOGIN ---
     if (loginWrapper) loginWrapper.style.display = "none";
-    loginBtnNav.style.display = "none";
-    logoutBtn.style.display = "inline-block";
+    if (loginBtnNav) loginBtnNav.style.display = "none";
+    if (logoutBtn) logoutBtn.style.display = "inline-block";
+    if (btnMyOrders) btnMyOrders.style.display = "inline-block";
 
     try {
-      // Cek Role
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      if (userDoc.exists()) {
-        const data = userDoc.data();
-
-        // JIKA ADMIN -> LEMPAR KE DASHBOARD
+      // Cek Data User di Database
+      const u = await getDoc(doc(db, "users", user.uid));
+      if (u.exists()) {
+        const data = u.data();
+        
+        // Cek Role Admin
         if (data.role === 'admin') {
-          console.log("Admin login. Redirecting...");
-          window.location.href = "admin.html"; 
-          return; 
+            if (adminLinkNav) adminLinkNav.style.display = "inline-block";
+            if (userInfo) {
+                userInfo.style.display = "inline-block";
+                userInfo.textContent = `Halo, Admin ${data.username}`;
+            }
+        } else {
+            // User Biasa
+            if (adminLinkNav) adminLinkNav.style.display = "none";
+            if (userInfo) {
+                userInfo.style.display = "inline-block";
+                userInfo.textContent = `Halo, ${data.username}`;
+            }
         }
-
-        // JIKA USER BIASA
-        userInfo.style.display = "inline-block";
-        userInfo.textContent = `Halo, ${data.username}`;
       }
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error("Auth Error:", e);
+    }
   } else {
-    // Belum Login
-    loginBtnNav.style.display = "inline-block";
-    logoutBtn.style.display = "none";
-    userInfo.style.display = "none";
+    // --- JIKA USER LOGOUT ---
+    if (loginBtnNav) loginBtnNav.style.display = "inline-block";
+    if (logoutBtn) logoutBtn.style.display = "none";
+    if (userInfo) userInfo.style.display = "none";
+    if (adminLinkNav) adminLinkNav.style.display = "none";
+    if (btnMyOrders) btnMyOrders.style.display = "none";
   }
 });
 
+// =========================================
+// 5. LOGIKA LOGIN / REGISTER / LOGOUT
+// =========================================
 
-// ============ 5. LOGIKA TAB & LOAD PRODUK ============
-const sections = {
-  home: document.getElementById("home-section"),
-  produk: document.getElementById("produk-section")
-};
+// Tombol Login di Navbar
+const loginBtnNav = getEl("login-btn-nav");
+if (loginBtnNav) {
+    loginBtnNav.addEventListener("click", () => {
+        const wrapper = getEl("login-wrapper");
+        const loginTab = getEl("login-tab");
+        const regTab = getEl("register-tab");
+        
+        if (wrapper) wrapper.style.display = "flex";
+        if (loginTab) loginTab.style.display = "block";
+        if (regTab) regTab.style.display = "none";
+    });
+}
 
-// Navigasi Tab
-document.querySelectorAll(".nav-link").forEach(link => {
-  link.addEventListener("click", (e) => {
-    e.preventDefault();
-    const targetId = link.dataset.target;
-    
-    // Hide All
-    Object.values(sections).forEach(s => s.style.display = "none");
-    // Show Target
-    const targetSection = document.getElementById(targetId);
-    if(targetSection) targetSection.style.display = "block";
-    
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  });
-});
+// Tombol Tutup Login
+const loginClose = getEl("login-close");
+if (loginClose) {
+    loginClose.addEventListener("click", () => {
+        const wrapper = getEl("login-wrapper");
+        if (wrapper) wrapper.style.display = "none";
+    });
+}
 
-// Load & Sort Produk
+// Switch ke Register
+const goRegister = getEl("go-register");
+if (goRegister) {
+    goRegister.addEventListener("click", (e) => {
+        e.preventDefault();
+        getEl("login-tab").style.display = "none";
+        getEl("register-tab").style.display = "block";
+    });
+}
+
+// Switch ke Login
+const goLogin = getEl("go-login");
+if (goLogin) {
+    goLogin.addEventListener("click", (e) => {
+        e.preventDefault();
+        getEl("login-tab").style.display = "block";
+        getEl("register-tab").style.display = "none";
+    });
+}
+
+// Eksekusi Login
+const btnLogin = getEl("btn-login");
+if (btnLogin) {
+    btnLogin.addEventListener("click", async () => {
+        const u = getEl("login-username").value;
+        const p = getEl("login-password").value;
+        if (!u || !p) return showAlert("Isi username dan password!");
+
+        try {
+            const snap = await getDoc(doc(db, "usernames", u));
+            if (!snap.exists()) throw new Error("Username tidak ditemukan");
+            
+            const uid = snap.data().uid;
+            const userSnap = await getDoc(doc(db, "users", uid));
+            const email = userSnap.data().email;
+
+            await signInWithEmailAndPassword(auth, email, p);
+            showAlert("Login Berhasil!");
+        } catch (e) { showAlert(e.message); }
+    });
+}
+
+// Eksekusi Daftar
+const btnDaftar = getEl("btn-daftar");
+if (btnDaftar) {
+    btnDaftar.addEventListener("click", async () => {
+        const u = getEl("reg-username").value;
+        const e = getEl("reg-email").value;
+        const p = getEl("reg-password").value;
+
+        if (!u || !e || !p) return showAlert("Lengkapi data!");
+
+        try {
+            const snap = await getDoc(doc(db, "usernames", u));
+            if (snap.exists()) throw new Error("Username sudah dipakai!");
+
+            const cred = await createUserWithEmailAndPassword(auth, e, p);
+            await setDoc(doc(db, "users", cred.user.uid), {
+                username: u, email: e, role: "user", createdAt: Date.now()
+            });
+            await setDoc(doc(db, "usernames", u), { uid: cred.user.uid });
+
+            showAlert("Berhasil Daftar! Silakan Login.");
+            getEl("login-tab").style.display = "block";
+            getEl("register-tab").style.display = "none";
+        } catch (err) { showAlert(err.message); }
+    });
+}
+
+// Eksekusi Logout
+const logoutBtn = getEl("logout-btn");
+const logoutModal = getEl("logout-confirm-modal");
+const btnLogoutYes = getEl("btn-logout-yes");
+const btnLogoutNo = getEl("btn-logout-no");
+
+if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+        if (logoutModal) logoutModal.style.display = "flex";
+    });
+}
+if (btnLogoutNo) {
+    btnLogoutNo.addEventListener("click", () => {
+        if (logoutModal) logoutModal.style.display = "none";
+    });
+}
+if (btnLogoutYes) {
+    btnLogoutYes.addEventListener("click", async () => {
+        await signOut(auth);
+        window.location.reload();
+    });
+}
+
+// =========================================
+// 6. LOAD PRODUK & FILTER & SEARCH
+// =========================================
 async function loadProducts() {
-  const homeContainer = document.getElementById("home-products");
-  const allContainer = document.getElementById("all-products");
+  const homeContainer = getEl("home-products");
+  const allContainer = getEl("all-products");
+
+  if(allContainer) allContainer.innerHTML = "<p style='text-align:center; color:white;'>Memuat data...</p>";
 
   try {
     const snap = await getDocs(collection(db, "products"));
-    const products = [];
-    // Kita simpan juga ID dokumennya
-    snap.forEach(d => products.push({ docId: d.id, ...d.data() }));
+    allProductsData = [];
+    snap.forEach(d => allProductsData.push({ docId: d.id, ...d.data() }));
 
-    // SORTIR
-    const sortValue = sortSelect ? sortSelect.value : "newest";
-    if (sortValue === "cheap") products.sort((a, b) => a.price - b.price);
-    else if (sortValue === "expensive") products.sort((a, b) => b.price - a.price);
-    else if (sortValue === "name") products.sort((a, b) => a.name.localeCompare(b.name));
-    else products.sort((a, b) => b.createdAt - a.createdAt); // Default Newest
+    // Render Home (3 Terbaru)
+    if (homeContainer) {
+        const homeData = [...allProductsData].sort((a, b) => b.createdAt - a.createdAt);
+        renderProductList(homeContainer, homeData.slice(0, 3));
+    }
 
-    // Helper Render
-    const render = (container, list) => {
-      container.innerHTML = "";
-      if (list.length === 0) container.innerHTML = "<p style='text-align:center'>Belum ada produk.</p>";
-      else list.forEach(p => container.appendChild(createProductCard(p)));
-    };
+    // Render Katalog (Filter)
+    applyFilters(); 
 
-    if (homeContainer) render(homeContainer, products.slice(0, 3));
-    if (allContainer) render(allContainer, products);
-
-  } catch (err) { console.error(err); }
+  } catch (err) { console.error("Load Error:", err); }
 }
 
-// Event Sortir
-if (sortSelect) sortSelect.addEventListener("change", () => loadProducts());
+function applyFilters() {
+  const container = getEl("all-products");
+  const searchInput = getEl("search-input");
+  const filterCategory = getEl("filter-category");
+  const sortSelect = getEl("sort-select");
 
-// Buat HTML Kartu Produk (UPDATE STOK LOGIC)
+  if (!container) return;
+
+  const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
+  const categoryVal = filterCategory ? filterCategory.value : "all";
+  const sortVal = sortSelect ? sortSelect.value : "newest";
+
+  let filtered = allProductsData.filter(p => {
+      const matchName = p.name ? p.name.toLowerCase().includes(searchTerm) : false;
+      const matchCat = (categoryVal === "all") || (p.category === categoryVal);
+      // Fallback untuk produk lama
+      const finalCat = p.category ? matchCat : true; 
+      return matchName && finalCat;
+  });
+
+  // Sorting
+  if (sortVal === "cheap") filtered.sort((a, b) => a.price - b.price);
+  else if (sortVal === "expensive") filtered.sort((a, b) => b.price - a.price);
+  else filtered.sort((a, b) => b.createdAt - a.createdAt);
+
+  renderProductList(container, filtered);
+}
+
+function renderProductList(container, list) {
+    container.innerHTML = "";
+    if (list.length === 0) {
+        container.innerHTML = "<p style='text-align:center; width:100%; color:#aaa;'>Produk tidak ditemukan.</p>";
+    } else {
+        list.forEach(p => container.appendChild(createProductCard(p)));
+    }
+}
+
+// Event Listeners Filter
+const searchInput = getEl("search-input");
+if (searchInput) searchInput.addEventListener("input", applyFilters);
+
+const filterCategory = getEl("filter-category");
+if (filterCategory) filterCategory.addEventListener("change", applyFilters);
+
+const sortSelect = getEl("sort-select");
+if (sortSelect) sortSelect.addEventListener("change", applyFilters);
+
+
+// =========================================
+// 7. MEMBUAT KARTU PRODUK (CARD UI)
+// =========================================
 function createProductCard(p) {
   const card = document.createElement("div");
   card.className = "produk-card";
 
-  // Cek Gambar vs Emoji
+  // Visual (Gambar/Emoji)
   let visual = "";
   if (p.imageType === 'url' || p.imageType === 'image') {
-    visual = `<img src="${p.imageValue}" class="produk-img" alt="${p.name}" loading="lazy">`;
+    visual = `<img src="${p.imageValue}" class="produk-img" loading="lazy">`;
   } else {
     visual = `<div class="produk-emoji">${p.imageValue || p.emoji}</div>`;
   }
 
-  // LOGIKA STOK
+  // Stok & Dropdown Size
   const stok = p.stock || 0;
-  let btnHTML = "";
+  let actionHTML = "";
   let stokHTML = "";
 
   if (stok > 0) {
-    // Jika ada stok
     stokHTML = `<span style="color:#fbbf24; font-size:0.9rem;">Sisa: ${stok}</span>`;
-    btnHTML = `
-      <button class="add-cart" 
-        data-id="${p.docId}" 
-        data-name="${p.name}" 
-        data-price="${p.price}"
-        data-stock="${stok}">
-        + Keranjang
-      </button>`;
+    
+    // Logika Dropdown Size
+    let sizeOptions = '<option value="">Pilih Size</option>';
+    if (p.sizes && Array.isArray(p.sizes) && p.sizes.length > 0) {
+        // Cek jika cuma "All Size"
+        if(p.sizes.includes("All Size")) {
+             sizeOptions += '<option value="All Size">All Size</option>';
+        } else {
+             // Sortir ukuran angka
+             p.sizes.sort((a,b)=>a-b).forEach(s => {
+                sizeOptions += `<option value="${s}">${s}</option>`;
+             });
+        }
+    } else {
+        // Default jika data size kosong
+        sizeOptions += '<option value="All Size">All Size</option>';
+    }
+
+    actionHTML = `
+      <div style="display:flex; gap:8px; margin-top:10px;">
+          <select class="size-selector" style="padding:8px; border-radius:12px; border:1px solid #ddd; background:#1e1b4b; color:white; width:40%; cursor:pointer;">
+              ${sizeOptions}
+          </select>
+          <button class="add-cart" 
+            style="flex:1;"
+            data-id="${p.docId}" 
+            data-name="${p.name}" 
+            data-price="${p.price}"
+            data-stock="${stok}">
+            + Keranjang
+          </button>
+      </div>`;
   } else {
-    // Jika habis
-    stokHTML = `<span style="color:#ef4444; font-weight:bold; font-size:0.9rem;">Stok Habis</span>`;
-    btnHTML = `
-      <button disabled style="width:100%; padding:12px; background:#475569; color:#94a3b8; border:none; border-radius:50px; cursor:not-allowed;">
+    stokHTML = `<span style="color:#ef4444; font-weight:bold;">Habis</span>`;
+    actionHTML = `
+      <button disabled style="width:100%; margin-top:10px; padding:12px; background:#475569; border-radius:12px; cursor:not-allowed;">
         Stok Habis
       </button>`;
   }
@@ -199,66 +384,44 @@ function createProductCard(p) {
   card.innerHTML = `
     ${visual}
     <h3>${p.name}</h3>
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-        <p class="price" style="margin:0;">Rp ${p.price.toLocaleString("id-ID")}</p>
+    <div style="display:flex; justify-content:space-between;"> 
+        <p class="price">Rp ${p.price.toLocaleString("id-ID")}</p> 
         ${stokHTML}
     </div>
     <p class="desc">${p.desc}</p>
-    ${btnHTML}
+    ${actionHTML}
   `;
   return card;
 }
 
-// Load Awal
-loadProducts();
+// =========================================
+// 8. KERANJANG (CART)
+// =========================================
+const cartBtn = getEl("cart-btn");
+const cartSidebar = getEl("cart-sidebar");
+const cartClose = getEl("cart-close");
+const cartList = getEl("cart-items");
+const cartTotal = getEl("cart-total");
+const cartCount = getEl("cart-count");
 
-
-// ============ 6. REGISTER & LOGIN ============
-document.getElementById("btn-daftar")?.addEventListener("click", async () => {
-  const u = regUsername.value.trim();
-  const e = regEmail.value.trim();
-  const p = regPass.value.trim();
-  
-  if (!u || !e || !p) return showAlert("Lengkapi data!");
-  
-  try {
-    const uSnap = await getDoc(doc(db, "usernames", u));
-    if (uSnap.exists()) throw new Error("Username sudah dipakai!");
-
-    const cred = await createUserWithEmailAndPassword(auth, e, p);
-    await setDoc(doc(db, "users", cred.user.uid), { 
-      username: u, email: e, role: "user", createdAt: Date.now() 
+// Buka Cart (Tutup Orders sidebar jika ada)
+if (cartBtn) {
+    cartBtn.addEventListener("click", () => {
+        document.body.classList.remove("orders-open");
+        document.body.classList.toggle("cart-open");
     });
-    await setDoc(doc(db, "usernames", u), { uid: cred.user.uid });
-    
-    showAlert("Berhasil Daftar!");
-  } catch (err) { showAlert(err.message); }
-});
+}
 
-document.getElementById("btn-login")?.addEventListener("click", async () => {
-  const u = loginUsername.value.trim();
-  const p = loginPass.value.trim();
-  if (!u || !p) return showAlert("Isi data!");
-  
-  try {
-    const uSnap = await getDoc(doc(db, "usernames", u));
-    if (!uSnap.exists()) throw new Error("User tidak ditemukan");
-    
-    const uid = uSnap.data().uid;
-    const userSnap = await getDoc(doc(db, "users", uid));
-    await signInWithEmailAndPassword(auth, userSnap.data().email, p);
-    showAlert("Login Berhasil!");
-  } catch (err) { showAlert(err.message); }
-});
+// Tutup Cart
+if (cartClose) {
+    cartClose.addEventListener("click", () => {
+        document.body.classList.remove("cart-open");
+    });
+}
 
-// ============ 7. KERANJANG CANGGIH ============
-
-const cart = []; 
-const cartCount = document.getElementById("cart-count");
-const cartTotal = document.getElementById("cart-total");
-const cartList = document.getElementById("cart-items");
-
+// Render Cart
 function renderCart() {
+  if (!cartList) return;
   cartList.innerHTML = "";
   let total = 0;
 
@@ -267,8 +430,9 @@ function renderCart() {
     const li = document.createElement("li");
     li.innerHTML = `
       <div class="cart-item-row">
-        <span>${item.name} <br> <small style="color:#aaa">Rp ${item.price.toLocaleString()}</small></span>
-        <button class="btn-remove" onclick="hapusItem(${index})">×</button>
+        <span>${item.name} <strong style="color:#fbbf24">(${item.size})</strong><br>
+        <small>Rp ${item.price.toLocaleString()}</small></span>
+        <button class="btn-remove" onclick="window.hapusItem(${index})">×</button>
       </div>
     `;
     cartList.appendChild(li);
@@ -278,176 +442,294 @@ function renderCart() {
   if (cartCount) cartCount.textContent = cart.length;
 }
 
+// Hapus Item (Global function)
 window.hapusItem = (index) => {
   cart.splice(index, 1);
   renderCart();
 };
 
-function flyToCart(btn, content, isImage = true) {
-  const cartBtn = document.getElementById("cart-btn");
-  if (!cartBtn) return;
-
-  let flyer;
-  if (isImage) {
-    flyer = document.createElement("img");
-    flyer.src = content;
-    flyer.classList.add("flying-img");
-    flyer.style.width = "50px"; flyer.style.height = "50px";
-    flyer.style.borderRadius = "50%"; flyer.style.objectFit = "cover";
-  } else {
-    flyer = document.createElement("div");
-    flyer.textContent = content;
-    flyer.classList.add("flying-emoji");
-  }
-
-  const rectBtn = btn.getBoundingClientRect();
-  flyer.style.position = "fixed";
-  flyer.style.top = rectBtn.top + "px";
-  flyer.style.left = rectBtn.left + "px";
-  document.body.appendChild(flyer);
-
-  setTimeout(() => {
-    const rectCart = cartBtn.getBoundingClientRect();
-    flyer.style.top = (rectCart.top + 5) + "px";
-    flyer.style.left = (rectCart.left + 5) + "px";
-    flyer.style.opacity = "0.5"; flyer.style.transform = "scale(0.3)";
-  }, 10);
-
-  setTimeout(() => {
-    flyer.remove();
-    cartBtn.style.transform = "scale(1.3)"; cartBtn.style.color = "#fbbf24";
-    setTimeout(() => { cartBtn.style.transform = "scale(1)"; cartBtn.style.color = ""; }, 200);
-  }, 800);
+// Animasi Terbang ke Cart
+function flyToCart(btn, content, isImg) {
+    if(!cartBtn) return;
+    let f = document.createElement(isImg?"img":"div");
+    if(isImg) { f.src=content; f.className="flying-img"; f.style.width="50px"; f.style.height="50px"; f.style.borderRadius="50%"; }
+    else { f.textContent=content; f.className="flying-emoji"; }
+    
+    const r = btn.getBoundingClientRect();
+    f.style.position="fixed"; f.style.top=r.top+"px"; f.style.left=r.left+"px"; 
+    document.body.appendChild(f);
+    
+    setTimeout(() => { 
+        const rc = cartBtn.getBoundingClientRect(); 
+        f.style.top=(rc.top+5)+"px"; f.style.left=(rc.left+5)+"px"; 
+        f.style.opacity="0.5"; f.style.transform="scale(0.3)"; 
+    }, 10);
+    
+    setTimeout(() => { 
+        f.remove(); 
+        cartBtn.style.transform="scale(1.3)"; cartBtn.style.color="#fbbf24"; 
+        setTimeout(()=>cartBtn.style.transform="scale(1)", 200); 
+    }, 800);
 }
 
-// --- EVENT LISTENER ADD TO CART (DENGAN CEK STOK LOCAL) ---
+// Event Delegate: Tombol Add to Cart
 document.addEventListener("click", (e) => {
   if (e.target.classList.contains("add-cart")) {
     const btn = e.target;
+    const sizeSelect = btn.previousElementSibling;
+    const selectedSize = sizeSelect ? sizeSelect.value : "All Size";
     
-    // Cek duplikasi di keranjang (Opsional: Batasi beli 1 per klik atau max stok)
-    // Untuk simpelnya, kita cek stok statis dari tombol
+    // Validasi Ukuran
+    if (selectedSize === "") return showAlert("⚠️ Harap pilih ukuran sepatu dulu!");
+    
+    // Cek Stok di Keranjang
     const maxStock = parseInt(btn.dataset.stock);
-    const itemInCart = cart.filter(i => i.id === btn.dataset.id).length;
+    const inCart = cart.filter(i => i.id === btn.dataset.id).length;
+    if (inCart >= maxStock) return showAlert("Stok habis!");
 
-    if (itemInCart >= maxStock) {
-      return showAlert("Stok tidak mencukupi untuk menambah lagi!");
-    }
-
-    // Masukkan Data ke Array
-    cart.push({ 
-        id: btn.dataset.id, // Penting untuk mengurangi stok nanti
-        name: btn.dataset.name, 
-        price: parseInt(btn.dataset.price) 
+    // Masuk Keranjang
+    cart.push({
+        id: btn.dataset.id,
+        name: btn.dataset.name,
+        price: parseInt(btn.dataset.price),
+        size: selectedSize
     });
     
     // Animasi
     const card = btn.closest(".produk-card");
-    const imgElement = card.querySelector("img");
-    const emojiElement = card.querySelector(".produk-emoji");
-
-    if (imgElement) flyToCart(btn, imgElement.src, true);
-    else if (emojiElement) flyToCart(btn, emojiElement.textContent, false);
-
-    setTimeout(() => { renderCart(); }, 700);
+    const img = card.querySelector("img");
+    if (img) flyToCart(btn, img.src, true);
+    else flyToCart(btn, card.querySelector(".produk-emoji").textContent, false);
+    
+    setTimeout(() => renderCart(), 700);
   }
 });
 
-// --- TOGGLE SIDEBAR ---
-document.getElementById("cart-btn")?.addEventListener("click", () => document.body.classList.toggle("cart-open"));
-document.getElementById("cart-close")?.addEventListener("click", () => document.body.classList.remove("cart-open"));
 
-// --- CHECKOUT (UPDATE STOK DATABASE) ---
-document.getElementById("checkout-btn")?.addEventListener("click", async () => {
-  if (cart.length === 0) return showAlert("Keranjang kosong!");
-  if (!auth.currentUser) {
-    showAlert("Login dulu untuk belanja!");
-    document.body.classList.remove("cart-open");
-    loginWrapper.style.display="flex";
-    return;
-  }
-  
-  const total = cart.reduce((a,b) => a+b.price, 0);
-  
-  // Disable tombol biar ga double klik
-  const btnCheckout = document.getElementById("checkout-btn");
-  btnCheckout.disabled = true;
-  btnCheckout.textContent = "Memproses...";
+// =========================================
+// 9. CHECKOUT TRANSFER (UPLOAD BUKTI)
+// =========================================
+const btnCheckout = getEl("checkout-btn");
+const checkoutModal = getEl("checkout-modal");
+const closeCheckout = getEl("close-checkout");
+const confirmPaymentBtn = getEl("confirm-payment-btn");
+const proofFile = getEl("proof-file");
+const checkoutTotalDisplay = getEl("checkout-total-display");
 
-  try {
-    // 1. Simpan Order
-    await addDoc(collection(db, "orders"), {
-      userId: auth.currentUser.uid,
-      items: cart,
-      total: total,
-      status: "Baru",
-      createdAt: Date.now()
-    });
-
-    // 2. Kurangi Stok di Database (Batch Logic Sederhana)
-    // Kita loop item di keranjang dan kurangi satu per satu
-    for (const item of cart) {
-        if(item.id) {
-            const productRef = doc(db, "products", item.id);
-            await updateDoc(productRef, {
-                stock: increment(-1)
-            });
+// Klik Checkout -> Buka Modal
+if (btnCheckout) {
+    btnCheckout.addEventListener("click", () => {
+        if (cart.length === 0) return showAlert("Keranjang kosong!");
+        if (!auth.currentUser) {
+            showAlert("Login dulu!");
+            document.body.classList.remove("cart-open");
+            const loginW = getEl("login-wrapper");
+            if(loginW) loginW.style.display = "flex";
+            return;
         }
+
+        // Tampilkan Total
+        const total = cart.reduce((a,b) => a + b.price, 0);
+        if (checkoutTotalDisplay) checkoutTotalDisplay.textContent = "Rp " + total.toLocaleString("id-ID");
+        
+        // Buka Modal
+        if (checkoutModal) checkoutModal.style.display = "flex";
+        document.body.classList.remove("cart-open");
+    });
+}
+
+// Tutup Checkout
+if (closeCheckout) {
+    closeCheckout.addEventListener("click", () => {
+        if (checkoutModal) checkoutModal.style.display = "none";
+    });
+}
+
+// Eksekusi Pembayaran
+if (confirmPaymentBtn) {
+    confirmPaymentBtn.addEventListener("click", async () => {
+        const file = proofFile.files[0];
+        if (!file) return showAlert("Wajib upload bukti transfer!");
+        if (file.size > 1024 * 1024) return showAlert("File terlalu besar (Max 1MB)");
+
+        confirmPaymentBtn.disabled = true;
+        confirmPaymentBtn.textContent = "Mengirim...";
+
+        try {
+            // Konversi Gambar
+            const proofBase64 = await convertToBase64(file);
+            const total = cart.reduce((a, b) => a + b.price, 0);
+
+            // Simpan Order
+            await addDoc(collection(db, "orders"), {
+                userId: auth.currentUser.uid,
+                items: cart,
+                total: total,
+                status: "Menunggu Verifikasi",
+                proofImage: proofBase64,
+                paymentMethod: "Transfer Bank",
+                createdAt: Date.now()
+            });
+
+            // Kurangi Stok di Database
+            for (const item of cart) {
+                if (item.id) {
+                    await updateDoc(doc(db, "products", item.id), {
+                        stock: increment(-1)
+                    });
+                }
+            }
+
+            // Bersihkan Keranjang
+            cart.length = 0;
+            renderCart();
+            checkoutModal.style.display = "none";
+            loadProducts();
+            showAlert("Pesanan Berhasil! Admin akan memverifikasi bukti bayar.");
+
+        } catch (e) {
+            console.error(e);
+            showAlert("Gagal: " + e.message);
+        } finally {
+            confirmPaymentBtn.disabled = false;
+            confirmPaymentBtn.textContent = "Kirim Bukti Pembayaran";
+        }
+    });
+}
+
+
+// =========================================
+// 10. STATUS PESANAN (SIDEBAR)
+// =========================================
+const btnMyOrders = getEl("btn-my-orders");
+const ordersSidebar = getEl("orders-sidebar");
+const closeOrders = getEl("close-orders");
+const ordersListContainer = getEl("orders-list-container");
+
+// Buka Sidebar Pesanan
+if (btnMyOrders) {
+    btnMyOrders.addEventListener("click", (e) => {
+        e.preventDefault();
+        document.body.classList.remove("cart-open"); // Tutup cart
+        document.body.classList.add("orders-open"); // Buka orders
+        loadMyOrders();
+    });
+}
+
+// Tutup Sidebar Pesanan
+if (closeOrders) {
+    closeOrders.addEventListener("click", () => {
+        document.body.classList.remove("orders-open");
+    });
+}
+
+// Fetch Pesanan
+async function loadMyOrders() {
+    if (!ordersListContainer) return;
+    ordersListContainer.innerHTML = "<p style='text-align:center; color:#aaa; margin-top:20px;'>Memuat status...</p>";
+    
+    if (!auth.currentUser) return;
+
+    try {
+        const q = query(collection(db, "orders"), where("userId", "==", auth.currentUser.uid));
+        const snap = await getDocs(q);
+        
+        const orders = [];
+        snap.forEach(d => orders.push({ id: d.id, ...d.data() }));
+        orders.sort((a, b) => b.createdAt - a.createdAt);
+
+        renderMyOrders(orders);
+    } catch (e) {
+        console.error(e);
+        ordersListContainer.innerHTML = "<p style='text-align:center; color:red;'>Gagal memuat data.</p>";
+    }
+}
+
+// Render Mini Card Pesanan
+function renderMyOrders(orders) {
+    ordersListContainer.innerHTML = "";
+    if (orders.length === 0) {
+        ordersListContainer.innerHTML = "<p style='text-align:center; color:#aaa; margin-top:20px;'>Belum ada pesanan.</p>";
+        return;
     }
 
-    // 3. Kirim WA
-   // ... kode sebelumnya (di dalam event listener checkout-btn) ...
+    orders.forEach(o => {
+        const date = new Date(o.createdAt).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' });
+        const itemNames = o.items.map(i => i.name).join(", ");
+        const itemCount = o.items.length;
+        
+        // Warna Status
+        let statusColor = "#fbbf24"; let statusIcon = "🕒";
+        if (o.status === "Lunas / Proses" || o.status === "Proses") {
+            statusColor = "#3b82f6"; statusIcon = "📦";
+        } else if (o.status === "Selesai") {
+            statusColor = "#10b981"; statusIcon = "✅";
+        } else if (o.status === "Batal") {
+            statusColor = "#ef4444"; statusIcon = "❌";
+        }
 
-    // 3. Kirim WA
-    const text = cart.map(i => `${i.name}`).join(", ");
+        const card = document.createElement("div");
+        card.className = "order-card-mini";
+        card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                <span style="color:#aaa; font-size:0.8rem;">${date}</span>
+                <span style="background:${statusColor}; color:black; padding:2px 8px; border-radius:4px; font-weight:bold; font-size:0.75rem;">${statusIcon} ${o.status}</span>
+            </div>
+            <h4 style="margin:0 0 5px 0; color:white; font-size:0.95rem;">${itemNames}</h4>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; border-top:1px solid rgba(255,255,255,0.1); padding-top:8px;">
+                <span style="color:#ccc; font-size:0.85rem;">${itemCount} Barang</span>
+                <span style="color:#fbbf24; font-weight:bold;">Rp ${o.total.toLocaleString("id-ID")}</span>
+            </div>
+        `;
+        ordersListContainer.appendChild(card);
+    });
+}
+
+
+// =========================================
+// 11. NAVIGASI HALAMAN & GLOBAL CLICK
+// =========================================
+document.querySelectorAll(".nav-link").forEach(link => {
+  link.addEventListener("click", (e) => {
     
-    // PERUBAHAN: Nomor diganti menjadi 6289601572430
-    window.open(`https://wa.me/6289601572430?text=Halo Admin, Saya mau order: ${text} | Total: Rp ${total.toLocaleString()}`, "_blank");
+    // Jangan cegah default jika tombol Admin atau Pesanan (karena logic mereka beda)
+    if (link.id === "admin-link-nav" || link.id === "btn-my-orders") return;
+
+    e.preventDefault();
+    const targetId = link.dataset.target;
     
-    // 4. Reset
-    cart.length = 0; 
-    renderCart(); 
+    // Sembunyikan semua section
+    document.querySelectorAll("main > section").forEach(s => s.style.display = "none");
     
-    // ... kode selanjutnya ...
-    renderCart(); 
-    document.body.classList.remove("cart-open");
-    loadProducts(); // Reload produk biar stok di tampilan update
-    showAlert("Pesanan berhasil dibuat!");
-
-  } catch(e) { 
-    console.error(e);
-    showAlert("Gagal checkout: " + e.message); 
-  } finally {
-    btnCheckout.disabled = false;
-    btnCheckout.textContent = "Checkout WhatsApp";
-  }
+    // Tampilkan target
+    const targetSection = getEl(targetId);
+    if (targetSection) targetSection.style.display = "block";
+    
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
 });
 
-
-// ============ 8. MODAL & UI HELPERS ============
-const logoutModal = document.getElementById("logout-confirm-modal");
-document.getElementById("logout-btn")?.addEventListener("click", () => {
-  if (logoutModal) logoutModal.style.display = "flex";
-});
-document.getElementById("btn-logout-no")?.addEventListener("click", () => logoutModal.style.display="none");
-document.getElementById("btn-logout-yes")?.addEventListener("click", async () => {
-  await signOut(auth); window.location.reload();
-});
-
-loginBtnNav.addEventListener("click", () => loginWrapper.style.display="flex");
-document.getElementById("login-close").addEventListener("click", () => loginWrapper.style.display="none");
-
-document.getElementById("go-register").addEventListener("click", () => {
-  document.getElementById("login-tab").style.display="none";
-  document.getElementById("register-tab").style.display="block";
-});
-document.getElementById("go-login").addEventListener("click", () => {
-  document.getElementById("login-tab").style.display="block";
-  document.getElementById("register-tab").style.display="none";
-});
-
+// Tutup Modal/Alert jika klik di luar
 window.addEventListener("click", (e) => {
-  if (e.target === loginWrapper) loginWrapper.style.display = "none";
-  if (e.target === logoutModal) logoutModal.style.display = "none";
-  if (e.target === customAlert) customAlert.style.display = "none";
+    const loginWrapper = getEl("login-wrapper");
+    const customAlert = getEl("custom-alert");
+    const logoutModal = getEl("logout-confirm-modal");
+    const checkoutModal = getEl("checkout-modal");
+
+    if (e.target === loginWrapper) loginWrapper.style.display = "none";
+    if (e.target === customAlert) customAlert.style.display = "none";
+    if (e.target === logoutModal) logoutModal.style.display = "none";
+    if (e.target === checkoutModal) checkoutModal.style.display = "none";
 });
+
+// Tutup Alert Tombol
+const btnCloseAlert = getEl("btn-close-alert");
+if(btnCloseAlert) {
+    btnCloseAlert.addEventListener("click", () => {
+        const customAlert = getEl("custom-alert");
+        if(customAlert) customAlert.style.display = "none";
+    });
+}
+
+// Load Awal
+loadProducts();
