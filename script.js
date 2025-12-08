@@ -252,7 +252,8 @@ async function loadProducts() {
   const homeContainer = getEl("home-products");
   const allContainer = getEl("all-products");
 
-  if(allContainer) allContainer.innerHTML = "<p style='text-align:center; color:white;'>Memuat data...</p>";
+  // UPDATE: Menggunakan loader animasi CSS
+  if(allContainer) allContainer.innerHTML = '<div class="loader"></div>';
 
   try {
     const snap = await getDocs(collection(db, "products"));
@@ -271,6 +272,9 @@ async function loadProducts() {
   } catch (err) { console.error("Load Error:", err); }
 }
 
+// =========================================
+// PERBAIKAN FUNGSI FILTER (GANTI YANG LAMA)
+// =========================================
 function applyFilters() {
   const container = getEl("all-products");
   const searchInput = getEl("search-input");
@@ -284,17 +288,33 @@ function applyFilters() {
   const sortVal = sortSelect ? sortSelect.value : "newest";
 
   let filtered = allProductsData.filter(p => {
+      // 1. Filter Search (Nama)
       const matchName = p.name ? p.name.toLowerCase().includes(searchTerm) : false;
-      const matchCat = (categoryVal === "all") || (p.category === categoryVal);
-      // Fallback untuk produk lama
-      const finalCat = p.category ? matchCat : true; 
-      return matchName && finalCat;
+
+      // 2. Filter Kategori (LOGIKA BARU YANG LEBIH KETAT)
+      let matchCat = false;
+      
+      if (categoryVal === "all") {
+          // Jika pilih "Semua Kategori", semua produk boleh lewat
+          matchCat = true;
+      } else {
+          // Jika pilih kategori tertentu (misal: Pria), 
+          // Cek apakah data di database SAMA PERSIS dengan pilihan
+          if (p.category && p.category === categoryVal) {
+              matchCat = true;
+          } else {
+              matchCat = false;
+          }
+      }
+
+      // Produk harus lolos filter Nama DAN filter Kategori
+      return matchName && matchCat;
   });
 
-  // Sorting
+  // Sorting (Urutan)
   if (sortVal === "cheap") filtered.sort((a, b) => a.price - b.price);
   else if (sortVal === "expensive") filtered.sort((a, b) => b.price - a.price);
-  else filtered.sort((a, b) => b.createdAt - a.createdAt);
+  else filtered.sort((a, b) => b.createdAt - a.createdAt); // Default: Terbaru
 
   renderProductList(container, filtered);
 }
@@ -359,9 +379,10 @@ function createProductCard(p) {
         sizeOptions += '<option value="All Size">All Size</option>';
     }
 
+    // Tombol Add to Cart Aktif
     actionHTML = `
       <div style="display:flex; gap:8px; margin-top:10px;">
-          <select class="size-selector" style="padding:8px; border-radius:12px; border:1px solid #ddd; background:#1e1b4b; color:white; width:40%; cursor:pointer;">
+          <select class="size-selector select-dark" style="padding:8px; border-radius:12px; border:1px solid #ddd; background:#1e1b4b; color:white; width:40%; cursor:pointer;">
               ${sizeOptions}
           </select>
           <button class="add-cart" 
@@ -374,9 +395,10 @@ function createProductCard(p) {
           </button>
       </div>`;
   } else {
+    // Tombol Habis
     stokHTML = `<span style="color:#ef4444; font-weight:bold;">Habis</span>`;
     actionHTML = `
-      <button disabled style="width:100%; margin-top:10px; padding:12px; background:#475569; border-radius:12px; cursor:not-allowed;">
+      <button disabled style="width:100%; margin-top:10px; padding:12px; background:#475569; border-radius:12px; cursor:not-allowed; border:none; color:#ccc;">
         Stok Habis
       </button>`;
   }
@@ -429,7 +451,7 @@ function renderCart() {
     total += item.price;
     const li = document.createElement("li");
     li.innerHTML = `
-      <div class="cart-item-row">
+      <div class="cart-item-row" style="width:100%; display:flex; justify-content:space-between; align-items:center;">
         <span>${item.name} <strong style="color:#fbbf24">(${item.size})</strong><br>
         <small>Rp ${item.price.toLocaleString()}</small></span>
         <button class="btn-remove" onclick="window.hapusItem(${index})">×</button>
@@ -584,7 +606,7 @@ if (confirmPaymentBtn) {
             cart.length = 0;
             renderCart();
             checkoutModal.style.display = "none";
-            loadProducts();
+            loadProducts(); // Reload untuk update stok di tampilan
             showAlert("Pesanan Berhasil! Admin akan memverifikasi bukti bayar.");
 
         } catch (e) {
@@ -626,7 +648,8 @@ if (closeOrders) {
 // Fetch Pesanan
 async function loadMyOrders() {
     if (!ordersListContainer) return;
-    ordersListContainer.innerHTML = "<p style='text-align:center; color:#aaa; margin-top:20px;'>Memuat status...</p>";
+    // UPDATE: Pakai loader
+    ordersListContainer.innerHTML = '<div class="loader"></div>';
     
     if (!auth.currentUser) return;
 
@@ -696,6 +719,12 @@ document.querySelectorAll(".nav-link").forEach(link => {
     if (link.id === "admin-link-nav" || link.id === "btn-my-orders") return;
 
     e.preventDefault();
+    
+    // --- PERBAIKAN PENTING: Buka kunci scroll saat pindah menu ---
+    document.body.classList.remove("cart-open");
+    document.body.classList.remove("orders-open");
+    // -----------------------------------------------------------
+
     const targetId = link.dataset.target;
     
     // Sembunyikan semua section
