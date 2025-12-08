@@ -1,8 +1,17 @@
 /* ============ RESET & GLOBAL ============ */
+/* ============ RESET & GLOBAL ============ */
+/* ============ RESET & GLOBAL ============ */
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
+
+/* TAMBAHKAN INI: Agar background dasar tetap gelap saat body geser */
+html {
+  background-color: #0a0a0f;
+  overflow-x: hidden;
+}
 
 * {
   box-sizing: border-box;
+  /* ... sisa kode reset kamu ... */
   margin: 0; 
   padding: 0;
   font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
@@ -22,17 +31,18 @@ body {
 body::before {
   content: '';
   position: fixed;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
+  top: 0;        /* Ubah jadi 0 agar full layar */
+  left: 0;       /* Ubah jadi 0 agar full layar */
+  width: 100vw;  /* Gunakan viewport width */
+  height: 100vh; /* Gunakan viewport height */
+  /* Background gradient kamu tetap sama */
   background: 
     radial-gradient(circle at 20% 30%, rgba(251, 191, 36, 0.15) 0%, transparent 40%),
     radial-gradient(circle at 80% 70%, rgba(236, 72, 153, 0.12) 0%, transparent 40%),
     radial-gradient(circle at 40% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 40%);
   animation: gradientShift 20s ease infinite;
   pointer-events: none;
-  z-index: 0;
+  z-index: -1; /* PENTING: Gunakan -1 agar benar-benar di belakang */
 }
 
 @keyframes gradientShift {
@@ -59,7 +69,7 @@ body::after {
   background-position: 0% 0%;
   animation: particleFloat 30s ease-in-out infinite;
   pointer-events: none;
-  z-index: 0;
+  z-index: -1;
   opacity: 0.4;
 }
 
@@ -502,7 +512,7 @@ body::after {
   z-index: 1000;
   transform: translateX(100%);
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  border-left: 1px solid rgba(251, 191, 36, 0.3);
+  border-left: none;
   display: flex;
   flex-direction: column;
   box-shadow: -10px 0 50px rgba(0, 0, 0, 0.5);
@@ -589,7 +599,7 @@ body::after {
   margin-bottom: 15px;
   padding: 18px;
   border-radius: 16px;
-  border-left: 4px solid #fbbf24;
+  border-left: none;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -676,7 +686,32 @@ body.orders-open .orders-sidebar {
 
 body.orders-open {
   padding-right: 420px;
-  overflow: hidden;
+ 
+}
+/* ============ PERBAIKAN SCROLL (Timpa kode lama) ============ */
+
+/* Hapus overflow:hidden agar body tetap bisa di-scroll */
+body.cart-open, 
+body.orders-open {
+  padding-right: 0 !important; /* Reset padding agar tidak goyang */
+  overflow-y: auto !important; /* PAKSA AGAR BISA SCROLL */
+}
+
+/* Pastikan Sidebar-nya sendiri bisa di-scroll isinya */
+.cart-content {
+  flex: 1;
+  overflow-y: auto !important; /* Aktifkan scroll vertikal di dalam sidebar */
+  height: 100%;                /* Pastikan tinggi penuh */
+  max-height: calc(100vh - 150px); /* Kurangi tinggi header & footer */
+}
+
+/* Pastikan Sidebar Sidebar tidak melebihi layar */
+.cart-sidebar, 
+.orders-sidebar {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  max-width: 100%; /* Agar aman di HP */
 }
 
 .order-card-mini {
@@ -1000,4 +1035,103 @@ input[type="file"]::-webkit-file-upload-button:hover {
 @keyframes bounce {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
+}
+/* ============ CUSTOM SCROLLBAR (Biar Gak Putih) ============ */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0f172a; /* Warna background gelap */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155; /* Warna batang scroll */
+  border-radius: 5px;
+  border: 2px solid #0f172a;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #fbbf24; /* Berubah emas saat disentuh */
+}
+/* Tambahkan di baris paling bawah style.css */
+@media (max-width: 768px) {
+  /* Paksa sidebar agar tidak lebih lebar dari layar HP */
+  .cart-sidebar, 
+  .orders-sidebar {
+    width: 100% !important; 
+    max-width: 100%;
+  }
+  
+  /* Pastikan scrollbar tetap bisa diakses */
+  .cart-content {
+    padding-bottom: 80px; /* Tambah ruang bawah agar tidak ketutup browser nav */
+  }
+}
+/* ============ REVISI FINAL: EFEK MINGGIR (SEAMLESS / TANPA GARIS) ============ */
+
+/* 1. Transisi Global */
+body, .navbar {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 2. Logika Desktop (Laptop/PC) */
+@media (min-width: 769px) {
+  
+  /* Saat Sidebar Terbuka */
+  body.cart-open,
+  body.orders-open {
+    margin-right: 420px !important; 
+    padding-right: 0 !important;
+    width: auto;
+  }
+
+  /* Navbar ikut mengecil tanpa garis pemisah */
+  body.cart-open .navbar,
+  body.orders-open .navbar {
+    width: calc(100% - 420px) !important;
+    right: 420px;
+    border-right: none !important; /* HAPUS GARIS PEMISAH DI SINI */
+  }
+
+  /* Sidebar styling saat aktif - Hapus border agar menyatu */
+  .cart-sidebar,
+  .orders-sidebar {
+    /* Gunakan bayangan super halus, jangan tajam */
+    box-shadow: -20px 0 60px rgba(0, 0, 0, 0.4); 
+    border-left: none !important; /* HAPUS GARIS EMAS PINGGIR */
+  }
+}
+
+/* ============ REVISI FINAL: NAVBAR TETAP FULL (GARIS NYAMBUNG) ============ */
+
+/* Logika Desktop (Laptop/PC) */
+@media (min-width: 769px) {
+  
+  /* 1. Body & Konten Utama: Minggir (Geser Kiri) */
+  body.cart-open,
+  body.orders-open {
+    margin-right: 420px !important; 
+    padding-right: 0 !important;
+    width: auto;
+  }
+
+  /* 2. Navbar: TETAP FULL WIDTH, Cuma Isinya yang Minggir */
+  body.cart-open .navbar,
+  body.orders-open .navbar {
+    width: 100% !important;   /* KUNCI: Lebar tetap full layar */
+    right: 0 !important;      /* Tempel ke ujung kanan layar */
+    
+    /* Dorong isi navbar (logo/menu) supaya tidak ketutup sidebar */
+    padding-right: 450px !important; /* 420px sidebar + 30px jarak aman */
+    
+    border-right: none !important; /* Hapus garis batas kanan jika ada */
+  }
+
+  /* 3. Sidebar: Tanpa Garis Pinggir (Seamless) */
+  .cart-sidebar,
+  .orders-sidebar {
+    border-left: none !important; /* Hapus garis pinggir sidebar */
+    box-shadow: -10px 0 40px rgba(0, 0, 0, 0.5); /* Bayangan halus saja */
+  }
 }
