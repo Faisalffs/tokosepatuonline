@@ -5,6 +5,76 @@
   <title>SepatuKita - Toko Online</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="style.css">
+  
+  <style>
+    /* Tombol Admin di Navbar */
+    .btn-admin-nav {
+      display: none; /* Default hidden, JS akan mengubahnya */
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      padding: 10px 20px;
+      border-radius: 50px;
+      color: #fbbf24;
+      border: 1px solid #fbbf24;
+      transition: 0.3s;
+    }
+    .btn-admin-nav:hover {
+      background: rgba(251, 191, 36, 0.1);
+      box-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
+    }
+
+    /* Tombol Hero Section */
+    .btn-hero-action {
+      display: inline-block;
+      margin-top: 15px;
+      background: #fbbf24;
+      color: black;
+      padding: 10px 20px;
+      border-radius: 30px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: transform 0.2s;
+    }
+    .btn-hero-action:hover {
+      transform: scale(1.05);
+      box-shadow: 0 5px 15px rgba(251, 191, 36, 0.4);
+    }
+
+    /* Input Select (Dropdown) agar Gelap/Dark Mode */
+    .select-dark {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.2);
+      cursor: pointer;
+      background: #1e293b; /* Gelap */
+      color: white;
+      font-weight: 500;
+      outline: none;
+    }
+    .select-dark:focus {
+      border-color: #fbbf24;
+    }
+
+    /* Modal Checkout yang lebih rapi */
+    .checkout-box {
+      text-align: left; 
+      max-width: 500px; 
+      background: #1e1b4b; 
+      border: 1px solid #fbbf24;
+    }
+    
+    /* Input Search */
+    .search-bar {
+      flex: 1;
+      min-width: 200px; 
+      padding: 10px; 
+      border-radius: 8px; 
+      border: none; 
+      outline: none;
+      background: rgba(255,255,255,0.9);
+    }
+  </style>
 </head>
 <body>
 
@@ -18,7 +88,7 @@
       
       <span class="cart" id="cart-btn">Keranjang (<span id="cart-count">0</span>)</span>
       
-      <a href="admin.html" id="admin-link-nav" style="display:none; text-decoration:none; font-weight:600; font-size:0.95rem; padding:10px 20px; border-radius:50px; color:#fbbf24; border:1px solid #fbbf24; transition:0.3s;">
+      <a href="admin.html" id="admin-link-nav" class="btn-admin-nav">
         👑 Panel Admin
       </a>
 
@@ -34,8 +104,7 @@
         <div class="hero-text">
           <h1>Sepatu Keren, Langkah Pasti</h1>
           <p>Kualitas terbaik untuk gaya harianmu.</p>
-          <a href="#" class="nav-link btn" data-target="produk-section" 
-             style="display:inline-block; margin-top:15px; background:#fbbf24; color:black; padding:10px 20px; border-radius:30px; text-decoration:none; font-weight:bold;">
+          <a href="#" class="nav-link btn-hero-action" data-target="produk-section">
              Belanja Sekarang
           </a>
         </div>
@@ -44,8 +113,7 @@
       <section class="produk-section">
         <h2>🔥 Terbaru</h2>
         <div class="produk-grid" id="home-products">
-          <p>Memuat...</p>
-        </div>
+          <div class="loader"></div> </div>
       </section>
     </section>
 
@@ -55,10 +123,10 @@
           <h2 style="margin-bottom:15px; border-bottom:3px solid #fbbf24; display:inline-block;">👟 Katalog Lengkap</h2>
           
           <div class="filter-container" style="display:flex; gap:10px; flex-wrap:wrap; background:rgba(0,0,0,0.3); padding:15px; border-radius:15px; margin-top:10px;">
-              <input type="text" id="search-input" placeholder="🔍 Cari nama sepatu..." 
-                     style="flex:1; min-width:200px; padding:10px; border-radius:8px; border:none; outline:none;">
               
-              <select id="filter-category" style="padding:10px; border-radius:8px; border:none; cursor:pointer; background:#fff; color:#333; font-weight:bold;">
+              <input type="text" id="search-input" class="search-bar" placeholder="🔍 Cari nama sepatu...">
+              
+              <select id="filter-category" class="select-dark">
                   <option value="all">Semua Kategori</option>
                   <option value="Pria">Pria</option>
                   <option value="Wanita">Wanita</option>
@@ -67,7 +135,7 @@
                   <option value="Casual">Casual</option>
               </select>
 
-              <select id="sort-select" style="padding:10px; border-radius:8px; border:none; cursor:pointer;">
+              <select id="sort-select" class="select-dark">
                 <option value="newest">Terbaru</option>
                 <option value="cheap">Termurah</option>
                 <option value="expensive">Termahal</option>
@@ -105,8 +173,7 @@
     </div>
     <div class="cart-content">
       <div id="orders-list-container">
-          <p style="text-align:center; color:#aaa; margin-top:20px;">Memuat riwayat...</p>
-      </div>
+          <div class="loader"></div> </div>
     </div>
   </div>
 
@@ -134,7 +201,7 @@
   </div>
 
   <div id="checkout-modal" class="modal-overlay" style="display: none;">
-    <div class="modal-box" style="text-align:left; max-width:500px; background:#1e1b4b; border:1px solid #fbbf24;">
+    <div class="modal-box checkout-box">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
           <h3 style="margin:0; color:#fbbf24;">💸 Pembayaran</h3>
           <span id="close-checkout" style="cursor:pointer; font-size:1.5rem; color:white;">&times;</span>
@@ -158,7 +225,7 @@
 
   <div id="custom-alert" class="modal-overlay" style="display: none;">
     <div class="modal-box">
-      <div style="font-size:3rem;">✨</div>
+      <div>✨</div>
       <h3 id="alert-msg" style="margin:10px 0;">Pesan</h3>
       <button id="btn-close-alert">OK</button>
     </div>
@@ -169,9 +236,9 @@
       <div style="font-size:3rem;">🚪</div>
       <h3>Logout?</h3>
       <p>Yakin mau keluar akun?</p>
-      <div style="display:flex; gap:10px; margin-top:15px;">
-        <button id="btn-logout-no" style="background:#ddd; color:#333;">Batal</button>
-        <button id="btn-logout-yes" style="background:#ef4444; color:white;">Ya</button>
+      <div style="display:flex; gap:10px; margin-top:15px; justify-content:center;">
+        <button id="btn-logout-no">Batal</button>
+        <button id="btn-logout-yes">Ya, Keluar</button>
       </div>
     </div>
   </div>
