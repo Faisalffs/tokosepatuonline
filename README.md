@@ -1,9 +1,8 @@
-# 👟 SepatuKita - Web Toko Sepatu Online
+# 👟 SepatuKita - Premium Online Shoe Store
 
-![Banner SepatuKita](https://via.placeholder.com/1000x300?text=SepatuKita+Banner)
-*(Ganti link gambar di atas dengan screenshot aplikasi Anda jika ada)*
+**SepatuKita** adalah aplikasi *e-commerce* modern berbasis web yang dibangun dengan konsep *Single Page Application* (SPA). Aplikasi ini hadir dengan antarmuka **Premium Glassmorphism** (Dark Mode) dan fitur lengkap mulai dari katalog interaktif, manajemen pesanan real-time, hingga dashboard admin yang informatif.
 
-**SepatuKita** adalah aplikasi *e-commerce* berbasis web yang dibangun dengan konsep *Single Page Application* (SPA). Aplikasi ini dirancang untuk memudahkan UMKM sepatu mengelola produk secara online tanpa biaya server backend yang mahal, memanfaatkan teknologi **Serverless Firebase**.
+Project ini memanfaatkan teknologi **Serverless Firebase** untuk database dan autentikasi, memungkinkan pengelolaan toko online tanpa biaya server backend konvensional.
 
 ---
 
@@ -12,24 +11,24 @@ Project ini dikerjakan untuk memenuhi Tugas Final Project mata kuliah **Rekayasa
 
 | NIM | Nama Mahasiswa | Peran (Jobdesk) |
 | :--- | :--- | :--- |
-| **701230300** | **Ahmad Faisal Assaudi** | *Fullstack Developer* (Logic JS, Firebase Integration) |
-| **701230095** | **Riska Fitria Rahmadani** | *UI/UX Designer* (CSS Styling, Responsive Layout) |
-| **701230299** | **Ahmad Fikri Gunawan** | *System Analyst* (SRS, Flowchart, Testing/UAT) |
+| **701230300** | **Ahmad Faisal Assaudi** | *Fullstack Developer* (Logic JS, Firebase Integration, Admin Panel) |
+| **701230095** | **Riska Fitria Rahmadani** | *UI/UX Designer* (CSS Styling, Glassmorphism UI, Responsive) |
+| **701230299** | **Ahmad Fikri Gunawan** | *System Analyst* (Testing/UAT, Flowchart, Documentation) |
 
 ---
 
 ## 🔗 Link Demo & Deployment
 
-* 🌐 **Akses Website:** [KLIK DISINI - LINK GITHUB PAGES ANDA]
-* 🎥 **Video Demo:** [KLIK DISINI - LINK YOUTUBE ANDA]
+* 🌐 **Akses Website:**(http://127.0.0.1:5500/index.html)
+* 🎥 **Video Demo:** [https://www.youtube.com/watch?v=QTJ5W8P-ZpY]
 
 ---
 
 ## 🛠️ Teknologi yang Digunakan
 
-Aplikasi ini dibangun tanpa framework berat, melainkan menggunakan *Vanilla JavaScript* modern untuk performa maksimal.
+Aplikasi ini dibangun menggunakan *Vanilla JavaScript* modern (ES6 Modules) untuk performa maksimal tanpa framework frontend berat.
 
-* **Frontend:** HTML5, CSS3 (Modern Glassmorphism & Dark Mode), JavaScript (ES6 Modules).
+* **Frontend:** HTML5, CSS3 (Modern Glassmorphism, Animations, Responsive Grid), JavaScript.
 * **Backend:** Google Firebase (Authentication & Cloud Firestore).
 * **Tools:** Visual Studio Code, Git/GitHub.
 
@@ -38,30 +37,36 @@ Aplikasi ini dibangun tanpa framework berat, melainkan menggunakan *Vanilla Java
 ## ✨ Fitur Unggulan
 
 ### 1. Sisi Pengguna (User)
-* 🛒 **Keranjang Sidebar:** Menu keranjang muncul dari samping kanan tanpa menutupi layar (*Push Layout*).
-* 🚀 **Animasi "Terbang":** Efek visual produk terbang masuk ke ikon keranjang saat tombol ditekan.
-* 🔍 **Smart Sorting:** Fitur urutkan produk (Termurah, Termahal, Terbaru, A-Z).
-* 📱 **Checkout WhatsApp:** Pesanan langsung terhubung ke WhatsApp Admin dengan format pesan otomatis.
+* 🎨 **UI Premium:** Desain gelap (Dark Mode) dengan efek *Glassmorphism* dan animasi partikel.
+* 🔍 **Smart Catalog:** Fitur pencarian nama sepatu, filter kategori (Pria/Wanita/Sport/dll), dan urutkan harga.
+* 🛒 **Keranjang Sidebar:** Keranjang belanja muncul dari sisi kanan (*Slide-in*) tanpa me-refresh halaman.
+* 💸 **Checkout Transfer:** Formulir konfirmasi pembayaran via Transfer Bank (BCA/Dana) dengan fitur **Upload Bukti Bayar** (Gambar).
+* 📦 **Status Pesanan:** Sidebar khusus untuk memantau status pesanan (Menunggu Verifikasi, Proses, Selesai) secara real-time.
 
 ### 2. Sisi Admin (Dashboard)
-* 🔐 **Role-Based Login:** Sistem otomatis mendeteksi Admin dan mengarahkannya ke Dashboard khusus.
-* 🖼️ **Hemat Storage:** Upload foto produk menggunakan teknik konversi **Base64** (disimpan langsung di database tanpa biaya Cloud Storage).
-* 📝 **CRUD Realtime:** Tambah, Edit, dan Hapus produk dengan pembaruan data langsung (*Realtime Listener*).
+* 📊 **Statistik Dashboard:** Kartu indikator jumlah total produk, total stok, dan total pesanan masuk.
+* 📂 **Manajemen Produk Terpisah:** Tab terpisah untuk "Daftar Produk" dan "Tambah Produk" agar lebih rapi.
+* 📝 **Edit Produk Pop-up:** Mengedit data produk (Nama, Harga, Stok, Foto) melalui modal pop-up yang interaktif.
+* ✅ **Verifikasi Pesanan:** Admin dapat melihat foto bukti transfer user, lalu mengubah status pesanan (Menunggu -> Lunas -> Selesai) dengan tombol konfirmasi aman.
+* 🖼️ **Image Handling:** Mendukung upload gambar produk maupun emoji sebagai visual produk.
 
 ---
 
 ## 🔑 Akun Demo (Untuk Pengujian)
 
-Gunakan akun berikut untuk mencoba fitur aplikasi:
+Silakan gunakan akun berikut untuk login dan menguji fitur aplikasi:
 
-### **1. Akun Admin (Akses Dashboard)**
+### **👑 1. Akun Admin (Akses Dashboard)**
 * **Email:** `admin@test.com`
 * **Password:** `123456`
+> *Admin memiliki akses penuh mengelola produk dan memverifikasi pesanan.*
 
-### **2. Akun User (Akses Belanja)**
+### **👤 2. Akun User (Akses Belanja)**
 * **Email:** `user@test.com`
 * **Password:** `123456`
-*(Atau Anda bisa mendaftar akun baru sendiri melalui menu Register)*
+> *User dapat melakukan pembelian, upload bukti bayar, dan melihat status pesanan.*
+
+*(Anda juga bisa mendaftar akun user baru melalui menu Register)*
 
 ---
 
@@ -69,28 +74,6 @@ Gunakan akun berikut untuk mencoba fitur aplikasi:
 
 Jika ingin menjalankan project ini di komputer sendiri:
 
-1.  **Clone Repository**
-    ```bash
-    git clone [https://github.com/username-anda/SepatuKita.git](https://github.com/username-anda/SepatuKita.git)
-    ```
-2.  **Buka di VS Code**
-    Buka folder hasil clone menggunakan Visual Studio Code.
-3.  **Install Live Server**
-    Pastikan ekstensi *Live Server* sudah terinstall di VS Code.
-4.  **Jalankan**
-    Klik kanan pada file `index.html`, lalu pilih **"Open with Live Server"**.
-
-> **Catatan:** Koneksi internet diperlukan karena aplikasi mengambil data langsung dari Firebase.
-
----
-
-## ⚠️ Batasan Sistem & Catatan
-* **Ukuran Gambar:** Karena menggunakan Base64, ukuran file gambar saat upload dibatasi maksimal **900KB**.
-* **Pembayaran:** Belum terintegrasi dengan Payment Gateway otomatis (Transfer manual via konfirmasi WA).
-
----
-
-## 📄 Lisensi & Kredit
-Project ini dibuat untuk keperluan akademik di **Universitas Islam Negeri Sultan Thaha Saifuddin Jambi**, Fakultas Sains dan Teknologi, Prodi Sistem Informasi.
-
-**Dosen Pengampu:** [MASUKKAN NAMA DOSEN DISINI]
+1. **Clone Repository**
+   ```bash
+   git clone [https://github.com/username-anda/SepatuKita.git](https://github.com/username-anda/SepatuKita.git)
