@@ -478,6 +478,84 @@ body::after {
 .add-cart:active {
   transform: translateY(0);
 }
+/* ============ PERBAIKAN SIZE SELECTOR (ADMIN) ============ */
+.size-options { 
+  display: flex; 
+  flex-wrap: wrap; 
+  gap: 10px; 
+  margin-top: 5px;
+}
+
+.size-options label {
+  /* Kita jadikan label sebagai wadah flex agar rapi */
+  display: flex; 
+  align-items: center;
+  gap: 8px; /* Jarak antara kotak centang dan angka */
+  
+  padding: 10px 15px; 
+  background: rgba(255, 255, 255, 0.05); 
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px; 
+  cursor: pointer; 
+  transition: all 0.2s ease;
+  color: white;
+  user-select: none;
+}
+
+/* ============ PERBAIKAN SIZE SELECTOR (ADMIN) - VERSI FINAL ============ */
+.size-options { 
+  display: flex; 
+  flex-wrap: wrap; 
+  gap: 10px; 
+  margin-top: 5px;
+}
+
+.size-options label {
+  /* Label sebagai tombol pembungkus */
+  display: flex; 
+  align-items: center;
+  gap: 10px; /* Jarak antara kotak centang dan angka */
+  
+  padding: 10px 15px; 
+  background: rgba(255, 255, 255, 0.05); 
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px; 
+  cursor: pointer; 
+  transition: all 0.2s ease;
+  color: white;
+  user-select: none;
+}
+
+/* 1. PAKSA MUNCULKAN KOTAK CENTANG (Wajib Ada) */
+.size-options input[type="checkbox"] { 
+  appearance: auto !important;         /* Standar browser */
+  -webkit-appearance: auto !important; /* Chrome/Safari */
+  display: inline-block !important; 
+  width: 20px; 
+  height: 20px;
+  cursor: pointer;
+  accent-color: #fbbf24;  /* Warna emas saat dicentang */
+  margin: 0;
+  opacity: 1 !important;
+  position: static !important;
+  z-index: 10;
+}
+
+/* 2. EFEK HOVER */
+.size-options label:hover {
+  background: rgba(251, 191, 36, 0.1); 
+  border-color: #fbbf24;
+}
+
+/* 3. EFEK SAAT DIPILIH (Highlight Warna Emas) */
+/* Selector :has ini membuat label berubah warna jika input di dalamnya dicentang */
+.size-options label:has(input:checked) { 
+  background: rgba(251, 191, 36, 0.2); 
+  border: 1px solid #fbbf24;
+  color: #fbbf24;
+  font-weight: 700;
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.2);
+}
 
 .size-selector {
   width: 100%;
