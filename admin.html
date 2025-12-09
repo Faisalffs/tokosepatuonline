@@ -225,13 +225,59 @@
     }
     input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(251,191,36,0.1); }
 
-    .size-wrapper { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 16px; margin-bottom: 20px; }
-    .size-options { display: flex; flex-wrap: wrap; gap: 10px; }
-    .size-options label {
-      padding: 8px 14px; background: rgba(0,0,0,0.3); border-radius: 8px; cursor: pointer; transition: 0.2s; border: 1px solid transparent;
+    /* ============ PERBAIKAN CSS SIZE DI ADMIN (KUNCI PERBAIKAN DISINI) ============ */
+    .size-wrapper { 
+        background: rgba(255,255,255,0.03); 
+        padding: 20px; 
+        border-radius: 16px; 
+        margin-bottom: 20px; 
     }
-    .size-options input[type="checkbox"] { display: none; }
-    .size-options input:checked + label { background: var(--primary); color: #0f172a; font-weight: 700; transform: scale(1.05); }
+    
+    .size-options { 
+        display: flex; 
+        flex-wrap: wrap; 
+        gap: 10px; 
+    }
+    
+    .size-options label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 15px; 
+        background: rgba(255, 255, 255, 0.05); 
+        border-radius: 8px; 
+        cursor: pointer; 
+        transition: 0.2s; 
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        user-select: none;
+    }
+    
+    /* MENAMPILKAN CHECKBOX AGAR TERLIHAT JELAS */
+    .size-options input[type="checkbox"] { 
+        appearance: auto !important;
+        -webkit-appearance: auto !important;
+        display: inline-block !important;
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: #fbbf24;
+        margin: 0;
+    }
+    
+    /* EFEK SAAT DIPILIH */
+    .size-options label:has(input:checked) { 
+        background: rgba(251, 191, 36, 0.2); 
+        border-color: #fbbf24;
+        color: #fbbf24; 
+        font-weight: 700; 
+        box-shadow: 0 0 10px rgba(251, 191, 36, 0.2);
+    }
+    
+    .size-options label:hover {
+        background: rgba(251, 191, 36, 0.1);
+        border-color: #fbbf24;
+    }
 
     /* === MODAL === */
     .modal {
