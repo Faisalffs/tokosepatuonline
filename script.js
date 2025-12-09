@@ -567,9 +567,19 @@ if (closeCheckout) {
     });
 }
 
-// Eksekusi Pembayaran
+// ==============================================
+// UPDATE: EKSEKUSI PEMBAYARAN + ALAMAT PENGIRIMAN
+// ==============================================
 if (confirmPaymentBtn) {
     confirmPaymentBtn.addEventListener("click", async () => {
+        // 1. AMBIL INPUT ALAMAT
+        const addressInput = getEl("checkout-address");
+        const userAddress = addressInput ? addressInput.value.trim() : "";
+
+        // 2. VALIDASI ALAMAT
+        if (!userAddress) return showAlert("Wajib isi alamat pengiriman!");
+
+        // Validasi File Bukti
         const file = proofFile.files[0];
         if (!file) return showAlert("Wajib upload bukti transfer!");
         if (file.size > 1024 * 1024) return showAlert("File terlalu besar (Max 1MB)");
@@ -582,11 +592,12 @@ if (confirmPaymentBtn) {
             const proofBase64 = await convertToBase64(file);
             const total = cart.reduce((a, b) => a + b.price, 0);
 
-            // Simpan Order
+            // 3. SIMPAN KE FIREBASE (Termasuk Alamat)
             await addDoc(collection(db, "orders"), {
                 userId: auth.currentUser.uid,
                 items: cart,
                 total: total,
+                address: userAddress, // <--- Data Alamat Disimpan Disini
                 status: "Menunggu Verifikasi",
                 proofImage: proofBase64,
                 paymentMethod: "Transfer Bank",
@@ -602,10 +613,15 @@ if (confirmPaymentBtn) {
                 }
             }
 
-            // Bersihkan Keranjang
+            // Bersihkan Keranjang & Input
             cart.length = 0;
             renderCart();
             checkoutModal.style.display = "none";
+            
+            // Reset Form Input
+            if(addressInput) addressInput.value = "";
+            proofFile.value = ""; 
+
             loadProducts(); // Reload untuk update stok di tampilan
             showAlert("Pesanan Berhasil! Admin akan memverifikasi bukti bayar.");
 
