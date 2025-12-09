@@ -340,7 +340,7 @@ if (sortSelect) sortSelect.addEventListener("change", applyFilters);
 
 
 // =========================================
-// 7. MEMBUAT KARTU PRODUK (CARD UI)
+// 7. MEMBUAT KARTU PRODUK (UPDATE: AUTO SIZE DEFAULT)
 // =========================================
 function createProductCard(p) {
   const card = document.createElement("div");
@@ -362,14 +362,17 @@ function createProductCard(p) {
   if (stok > 0) {
     stokHTML = `<span style="color:#fbbf24; font-size:0.9rem;">Sisa: ${stok}</span>`;
     
-    // Logika Dropdown Size
-    let sizeOptions = '<option value="">Pilih Size</option>';
+    // --- LOGIKA BARU: Tidak ada lagi opsi "Pilih Size" ---
+    // Browser otomatis memilih opsi pertama sebagai default
+    let sizeOptions = ''; 
+    
     if (p.sizes && Array.isArray(p.sizes) && p.sizes.length > 0) {
         // Cek jika cuma "All Size"
         if(p.sizes.includes("All Size")) {
              sizeOptions += '<option value="All Size">All Size</option>';
         } else {
-             // Sortir ukuran angka
+             // Sortir ukuran angka dan tampilkan semua
+             // Opsi pertama akan otomatis terpilih
              p.sizes.sort((a,b)=>a-b).forEach(s => {
                 sizeOptions += `<option value="${s}">${s}</option>`;
              });
@@ -501,8 +504,8 @@ document.addEventListener("click", (e) => {
     const sizeSelect = btn.previousElementSibling;
     const selectedSize = sizeSelect ? sizeSelect.value : "All Size";
     
-    // Validasi Ukuran
-    if (selectedSize === "") return showAlert("⚠️ Harap pilih ukuran sepatu dulu!");
+    // Validasi Ukuran (Hampir tidak akan error karena sudah auto select)
+    if (!selectedSize) return showAlert("⚠️ Harap pilih ukuran sepatu dulu!");
     
     // Cek Stok di Keranjang
     const maxStock = parseInt(btn.dataset.stock);
