@@ -209,7 +209,7 @@ btnCancelEdit.addEventListener("click", () => editModal.style.display = "none");
 
 // ============ ORDERS & STATUS OK BUTTON ============
 async function loadOrders() {
-    orderTableBody.innerHTML = "<tr><td colspan='7' style='text-align:center;'>Loading...</td></tr>";
+    orderTableBody.innerHTML = "<tr><td colspan='8' style='text-align:center;'>Loading...</td></tr>";
     try {
         const userMap = await getUserMap();
         const snap = await getDocs(collection(db, "orders"));
@@ -217,37 +217,69 @@ async function loadOrders() {
         orders.sort((a, b) => b.createdAt - a.createdAt);
         renderOrders(orders, userMap);
         updateStats(orders.length);
-    } catch (e) { orderTableBody.innerHTML = `<tr><td colspan='7'>Error: ${e.message}</td></tr>`; }
+    } catch (e) { orderTableBody.innerHTML = `<tr><td colspan='8'>Error: ${e.message}</td></tr>`; }
 }
 
 async function getUserMap() { const map = {}; try { const snap = await getDocs(collection(db, "users")); snap.forEach(d => map[d.id] = d.data().username || "Unknown"); } catch(e){} return map; }
 
 function renderOrders(orders, userMap) {
     orderTableBody.innerHTML = "";
-    if (orders.length === 0) { orderTableBody.innerHTML = "<tr><td colspan='7' style='text-align:center;'>Belum ada pesanan.</td></tr>"; return; }
+    if (orders.length === 0) { orderTableBody.innerHTML = "<tr><td colspan='8' style='text-align:center;'>Belum ada pesanan.</td></tr>"; return; }
     orders.forEach(o => {
         const date = new Date(o.createdAt).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' });
         const rawId = o.userId || "UnknownID"; const shortId = rawId.length > 5 ? rawId.slice(0, 5) : rawId; const userName = userMap[rawId] || "User Tidak Dikenal";
+        
+        // Ambil data alamat
+        const alamatUser = o.address || "-"; 
+
         const itemsList = o.items.map(i => `• ${i.name} ${i.size ? '(Size: '+i.size+')' : ''}`).join("<br>");
         let statusColor = "#fbbf24"; 
         if (o.status === "Lunas / Proses") statusColor = "#3b82f6"; if (o.status === "Selesai") statusColor = "#10b981"; if (o.status === "Batal") statusColor = "#ef4444";
         const proofBtn = o.proofImage ? `<button onclick="window.lihatBukti('${o.proofImage}')" style="background:rgba(139,92,246,0.2); color:#a78bfa; border:1px solid rgba(139,92,246,0.4); padding:6px 12px; border-radius:8px; cursor:pointer;">📷 Lihat</button>` : `<span style="color:#aaa;">-</span>`;
 
         const selectId = `status-select-${o.id}`;
+        
+        // ============ LOGIKA PENGUNCIAN PESANAN (LOCK) ============
+        // Jika status "Selesai", maka kolom aksi berubah jadi teks mati
+        const isLocked = o.status === "Selesai";
+        
+        let actionHTML = "";
+
+        if (isLocked) {
+            // TAMPILAN JIKA SELESAI (TERKUNCI)
+            actionHTML = `
+                <div style="text-align:center; padding:10px; background:rgba(16,185,129,0.1); border-radius:8px; border:1px solid rgba(16,185,129,0.2);">
+                    <span style="color:#10b981; font-weight:bold; display:block;">✅ Final</span>
+                    <small style="color:#94a3b8; font-size:0.75rem;">Data Terkunci</small>
+                </div>
+            `;
+        } else {
+            // TAMPILAN JIKA BELUM SELESAI (BISA DIEDIT)
+            actionHTML = `
+                <div style="display:flex; gap:5px; margin-bottom:8px;">
+                    <select id="${selectId}" style="padding:8px; border-radius:8px; border:1px solid #555; background:#222; color:white; width:100%;">
+                        <option value="Menunggu Verifikasi" ${o.status==='Menunggu Verifikasi'?'selected':''}>Menunggu</option>
+                        <option value="Lunas / Proses" ${o.status==='Lunas / Proses'?'selected':''}>Proses</option>
+                        <option value="Selesai" ${o.status==='Selesai'?'selected':''}>Selesai</option>
+                        <option value="Batal" ${o.status==='Batal'?'selected':''}>Batal</option>
+                    </select>
+                    <button onclick="window.simpanStatus('${o.id}', '${selectId}')" style="background:#10b981; color:black; border:none; padding:0 12px; border-radius:8px; cursor:pointer; font-weight:bold;">OK</button>
+                </div>
+                <button onclick="window.hapusOrder('${o.id}')" style="width:100%; background:rgba(239,68,68,0.2); color:#f87171; border:1px solid #ef4444; padding:6px; border-radius:8px; cursor:pointer;">Hapus</button>
+            `;
+        }
+
         const row = document.createElement("tr");
-        row.innerHTML = `<td>${date}</td><td><strong>${userName}</strong><br><small style="color:#aaa;">ID: ${shortId}...</small></td><td style="font-size:0.9rem; color:#e2e8f0;">${itemsList}</td><td style="color:#fbbf24; font-weight:bold;">Rp ${o.total.toLocaleString('id-ID')}</td><td style="text-align:center;">${proofBtn}</td><td><span style="background:${statusColor}; color:black; padding:4px 10px; border-radius:6px; font-weight:bold; font-size:0.75rem;">${o.status}</span></td>
-        <td>
-            <div style="display:flex; gap:5px; margin-bottom:8px;">
-                <select id="${selectId}" style="padding:8px; border-radius:8px; border:1px solid #555; background:#222; color:white; width:100%;">
-                    <option value="Menunggu Verifikasi" ${o.status==='Menunggu Verifikasi'?'selected':''}>Menunggu</option>
-                    <option value="Lunas / Proses" ${o.status==='Lunas / Proses'?'selected':''}>Proses</option>
-                    <option value="Selesai" ${o.status==='Selesai'?'selected':''}>Selesai</option>
-                    <option value="Batal" ${o.status==='Batal'?'selected':''}>Batal</option>
-                </select>
-                <button onclick="window.simpanStatus('${o.id}', '${selectId}')" style="background:#10b981; color:black; border:none; padding:0 12px; border-radius:8px; cursor:pointer; font-weight:bold;">OK</button>
-            </div>
-            <button onclick="window.hapusOrder('${o.id}')" style="width:100%; background:rgba(239,68,68,0.2); color:#f87171; border:1px solid #ef4444; padding:6px; border-radius:8px; cursor:pointer;">Hapus</button>
-        </td>`;
+        row.innerHTML = `
+            <td>${date}</td>
+            <td><strong>${userName}</strong><br><small style="color:#aaa;">ID: ${shortId}...</small></td>
+            <td style="font-size:0.85rem; max-width:150px; word-wrap:break-word;">${alamatUser}</td>
+            <td style="font-size:0.9rem; color:#e2e8f0;">${itemsList}</td>
+            <td style="color:#fbbf24; font-weight:bold;">Rp ${o.total.toLocaleString('id-ID')}</td>
+            <td style="text-align:center;">${proofBtn}</td>
+            <td><span style="background:${statusColor}; color:black; padding:4px 10px; border-radius:6px; font-weight:bold; font-size:0.75rem;">${o.status}</span></td>
+            <td>${actionHTML}</td>
+        `;
         orderTableBody.appendChild(row);
     });
 }
@@ -256,6 +288,14 @@ window.simpanStatus = async (orderId, selectElementId) => {
     const selectEl = document.getElementById(selectElementId);
     if(!selectEl) return;
     const newStatus = selectEl.value;
+    
+    // Konfirmasi extra jika mau menyelesaikan pesanan
+    if (newStatus === "Selesai") {
+        if (!confirm("⚠️ PERHATIAN:\n\nJika status diubah menjadi 'Selesai', pesanan akan TERKUNCI dan tidak bisa diedit atau dihapus lagi.\n\nStok produk sudah otomatis berkurang saat user checkout.\n\nLanjutkan?")) {
+            return; // Batal simpan jika user pilih cancel di popup
+        }
+    }
+
     const btn = selectEl.nextElementSibling; 
     const oldText = btn.textContent;
     btn.textContent = "..."; btn.disabled = true;
